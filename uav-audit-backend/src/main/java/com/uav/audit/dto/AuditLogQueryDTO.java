@@ -1,0 +1,15 @@
+package com.uav.audit.dto;
+
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+public class AuditLogQueryDTO {
+    private String username;
+    private String operationType;
+    private String operationObject;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private Integer pageNum = 1;
+    private Integer pageSize = 10;
+}
