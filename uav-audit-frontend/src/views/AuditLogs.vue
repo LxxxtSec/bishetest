@@ -50,7 +50,9 @@
         <el-table-column prop="username" label="操作用户" width="100" />
         <el-table-column prop="operationType" label="操作类型" width="120">
           <template #default="{ row }">
-            <el-tag size="small">{{ row.operationType }}</el-tag>
+            <el-tag size="small" :type="getOperationTagType(row.operationType)">
+              {{ getOperationTypeLabel(row.operationType) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="operationDesc" label="操作描述" min-width="150" />
@@ -92,7 +94,7 @@
     <el-dialog v-model="detailVisible" title="日志详情" width="600px">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="操作用户">{{ currentLog.username }}</el-descriptions-item>
-        <el-descriptions-item label="操作类型">{{ currentLog.operationType }}</el-descriptions-item>
+        <el-descriptions-item label="操作类型">{{ getOperationTypeLabel(currentLog.operationType) }}</el-descriptions-item>
         <el-descriptions-item label="操作描述" :span="2">{{ currentLog.operationDesc }}</el-descriptions-item>
         <el-descriptions-item label="操作对象">{{ currentLog.operationObject }}</el-descriptions-item>
         <el-descriptions-item label="IP地址">{{ currentLog.ipAddress }}</el-descriptions-item>
@@ -128,6 +130,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import { getOperationTagType, getOperationTypeLabel } from '@/utils/operationType'
 
 const loading = ref(false)
 const logList = ref([])

@@ -32,7 +32,7 @@
         <el-table-column prop="alertLevel" label="告警级别" width="100">
           <template #default="{ row }">
             <el-tag :type="getAlertType(row.alertLevel)" size="small">
-              {{ row.alertLevel }}
+              {{ getAlertLevelLabel(row.alertLevel) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -100,7 +100,7 @@
       <el-descriptions :column="1" border>
         <el-descriptions-item label="告警类型">{{ currentAlert.alertType }}</el-descriptions-item>
         <el-descriptions-item label="告警级别">
-          <el-tag :type="getAlertType(currentAlert.alertLevel)">{{ currentAlert.alertLevel }}</el-tag>
+          <el-tag :type="getAlertType(currentAlert.alertLevel)">{{ getAlertLevelLabel(currentAlert.alertLevel) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="告警消息">{{ currentAlert.alertMessage }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ currentAlert.createTime }}</el-descriptions-item>
@@ -142,11 +142,29 @@ const currentAlert = ref({})
 const getAlertType = (level) => {
   const map = {
     critical: 'danger',
+    CRITICAL: 'danger',
     high: 'danger',
+    HIGH: 'danger',
     medium: 'warning',
-    low: 'info'
+    MEDIUM: 'warning',
+    low: 'info',
+    LOW: 'info'
   }
   return map[level] || 'info'
+}
+
+const getAlertLevelLabel = (level) => {
+  const map = {
+    critical: '严重',
+    CRITICAL: '严重',
+    high: '高',
+    HIGH: '高',
+    medium: '中',
+    MEDIUM: '中',
+    low: '低',
+    LOW: '低'
+  }
+  return map[level] || level || ''
 }
 
 const loadData = async () => {

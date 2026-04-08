@@ -5,11 +5,11 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-content">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+            <div class="stat-icon stat-icon--fleet">
               <el-icon :size="28"><Monitor /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.totalUavs }}</div>
+              <div class="stat-value uav-mono">{{ stats.totalUavs }}</div>
               <div class="stat-label">无人机总数</div>
             </div>
           </div>
@@ -18,11 +18,11 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-content">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+            <div class="stat-icon stat-icon--online">
               <el-icon :size="28"><VideoPlay /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.onlineUavs }}</div>
+              <div class="stat-value uav-mono">{{ stats.onlineUavs }}</div>
               <div class="stat-label">在线无人机</div>
             </div>
           </div>
@@ -31,11 +31,11 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-content">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)">
+            <div class="stat-icon stat-icon--ops">
               <el-icon :size="28"><Document /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.todayLogs }}</div>
+              <div class="stat-value uav-mono">{{ stats.todayLogs }}</div>
               <div class="stat-label">今日操作</div>
             </div>
           </div>
@@ -44,11 +44,11 @@
       <el-col :span="6">
         <el-card class="stat-card">
           <div class="stat-content">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)">
+            <div class="stat-icon stat-icon--alerts">
               <el-icon :size="28"><Bell /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.pendingAlerts }}</div>
+              <div class="stat-value uav-mono">{{ stats.pendingAlerts }}</div>
               <div class="stat-label">待处理告警</div>
             </div>
           </div>
@@ -114,8 +114,8 @@
             <el-table-column prop="username" label="操作用户" width="100" />
             <el-table-column prop="operationType" label="操作类型" width="120">
               <template #default="{ row }">
-                <el-tag size="small" :type="getOperationType(row.operationType)">
-                  {{ row.operationType }}
+                <el-tag size="small" :type="getOperationTagType(row.operationType)">
+                  {{ getOperationTypeLabel(row.operationType) }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -144,6 +144,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { Monitor, VideoPlay, Document, Bell, Location, PieChart, TrendCharts, List, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import request from '@/utils/request'
+import { getOperationTagType, getOperationTypeLabel } from '@/utils/operationType'
 
 const mapChartRef = ref(null)
 const taskChartRef = ref(null)
@@ -154,6 +155,19 @@ let mapChart = null
 let taskChart = null
 let trendChart = null
 let alertChart = null
+
+const chartTheme = {
+  fg: '#EAEAEA',
+  muted: '#8A8D91',
+  faint: '#52555A',
+  grid: 'rgba(255, 255, 255, 0.06)',
+  panel: '#141416',
+  lime: '#6B8E6B',
+  cyan: '#5E8B95',
+  amber: '#B88645',
+  red: '#A64452',
+  primary: '#C5A880'
+}
 
 const stats = ref({
   totalUavs: 12,
@@ -186,14 +200,18 @@ const initMapChart = () => {
     name: uav.name,
     value: [...uav.coord, uav.battery],
     itemStyle: {
-      color: uav.status === 'online' ? '#67c23a' : uav.status === 'maintenance' ? '#e6a23c' : '#909399'
+      color: uav.status === 'online' ? chartTheme.lime : uav.status === 'maintenance' ? chartTheme.amber : chartTheme.faint
     }
   }))
 
   const option = {
-    backgroundColor: '#f5f7fa',
+    backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
+      backgroundColor: chartTheme.panel,
+      borderColor: chartTheme.grid,
+      borderWidth: 1,
+      textStyle: { color: chartTheme.fg },
       formatter: (params) => {
         const uav = uavPositions.find(p => p.name === params.name)
         if (uav) {
@@ -230,7 +248,8 @@ const initMapChart = () => {
           show: true,
           position: 'top',
           formatter: '{b}',
-          fontSize: 10
+          fontSize: 10,
+          color: chartTheme.muted
         }
       },
       {
@@ -243,7 +262,7 @@ const initMapChart = () => {
           { coords: [uavPositions[3].coord, uavPositions[5].coord] }
         ],
         lineStyle: {
-          color: '#409eff',
+          color: chartTheme.cyan,
           width: 1,
           type: 'dashed'
         },
@@ -251,7 +270,7 @@ const initMapChart = () => {
           show: true,
           period: 4,
           trailLength: 0.3,
-          color: '#409eff'
+          color: chartTheme.cyan
         }
       }
     ]
@@ -268,14 +287,19 @@ const initTaskChart = () => {
   const option = {
     tooltip: {
       trigger: 'item',
+      backgroundColor: chartTheme.panel,
+      borderColor: chartTheme.grid,
+      borderWidth: 1,
+      textStyle: { color: chartTheme.fg },
       formatter: '{b}: {c} ({d}%)'
     },
     legend: {
       orient: 'vertical',
       right: 10,
-      top: 'center'
+      top: 'center',
+      textStyle: { color: chartTheme.muted }
     },
-    color: ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399'],
+    color: [chartTheme.cyan, chartTheme.lime, chartTheme.amber, chartTheme.red, chartTheme.faint],
     series: [
       {
         type: 'pie',
@@ -283,7 +307,7 @@ const initTaskChart = () => {
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
-          borderColor: '#fff',
+          borderColor: chartTheme.panel,
           borderWidth: 2
         },
         label: {
@@ -294,7 +318,8 @@ const initTaskChart = () => {
           label: {
             show: true,
             fontSize: 16,
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            color: chartTheme.fg
           }
         },
         labelLine: {
@@ -321,7 +346,11 @@ const initTrendChart = () => {
 
   const option = {
     tooltip: {
-      trigger: 'axis'
+      trigger: 'axis',
+      backgroundColor: chartTheme.panel,
+      borderColor: chartTheme.grid,
+      borderWidth: 1,
+      textStyle: { color: chartTheme.fg }
     },
     grid: {
       left: '3%',
@@ -335,26 +364,26 @@ const initTrendChart = () => {
       boundaryGap: false,
       data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
       axisLine: {
-        lineStyle: { color: '#e4e7ed' }
+        lineStyle: { color: chartTheme.grid }
       },
-      axisLabel: { color: '#909399' }
+      axisLabel: { color: chartTheme.muted }
     },
     yAxis: {
       type: 'value',
       axisLine: { show: false },
-      axisLabel: { color: '#909399' },
-      splitLine: { lineStyle: { color: '#f0f0f0' } }
+      axisLabel: { color: chartTheme.muted },
+      splitLine: { lineStyle: { color: chartTheme.grid } }
     },
     series: [
       {
         name: '操作次数',
         type: 'line',
         smooth: true,
-        lineStyle: { color: '#409eff', width: 3 },
+        lineStyle: { color: chartTheme.cyan, width: 3 },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-            { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
+            { offset: 0, color: 'rgba(48, 227, 255, 0.28)' },
+            { offset: 1, color: 'rgba(48, 227, 255, 0.04)' }
           ])
         },
         data: [120, 132, 145, 128, 156, 178, 165]
@@ -363,11 +392,11 @@ const initTrendChart = () => {
         name: '告警次数',
         type: 'line',
         smooth: true,
-        lineStyle: { color: '#f56c6c', width: 3 },
+        lineStyle: { color: chartTheme.red, width: 3 },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(245, 108, 108, 0.3)' },
-            { offset: 1, color: 'rgba(245, 108, 108, 0.05)' }
+            { offset: 0, color: 'rgba(255, 77, 109, 0.24)' },
+            { offset: 1, color: 'rgba(255, 77, 109, 0.03)' }
           ])
         },
         data: [8, 5, 12, 6, 9, 7, 4]
@@ -385,7 +414,11 @@ const initAlertChart = () => {
 
   const option = {
     tooltip: {
-      trigger: 'item'
+      trigger: 'item',
+      backgroundColor: chartTheme.panel,
+      borderColor: chartTheme.grid,
+      borderWidth: 1,
+      textStyle: { color: chartTheme.fg }
     },
     series: [
       {
@@ -393,14 +426,18 @@ const initAlertChart = () => {
         radius: ['50%', '80%'],
         center: ['50%', '50%'],
         data: [
-          { value: 5, name: '低', itemStyle: { color: '#909399' } },
-          { value: 8, name: '中', itemStyle: { color: '#e6a23c' } },
-          { value: 3, name: '高', itemStyle: { color: '#f56c6c' } }
+          { value: 5, name: '低', itemStyle: { color: chartTheme.faint } },
+          { value: 8, name: '中', itemStyle: { color: chartTheme.amber } },
+          { value: 3, name: '高', itemStyle: { color: chartTheme.red } }
         ],
         label: {
           show: true,
           position: 'outside',
-          formatter: '{b}: {c}'
+          formatter: '{b}: {c}',
+          color: chartTheme.muted
+        },
+        labelLine: {
+          lineStyle: { color: chartTheme.grid }
         }
       }
     ]
@@ -427,18 +464,6 @@ const loadData = async () => {
   } catch (error) {
     console.error('加载数据失败:', error)
   }
-}
-
-const getOperationType = (type) => {
-  const map = {
-    'LOGIN': 'success',
-    'LOGOUT': 'info',
-    'USER_CREATE': 'primary',
-    'USER_UPDATE': 'warning',
-    'USER_DELETE': 'danger',
-    'QUERY': 'info'
-  }
-  return map[type] || 'info'
 }
 
 const handleResize = () => {
@@ -468,38 +493,54 @@ onUnmounted(() => {
 
 <style scoped>
 .dashboard {
-  padding: 20px;
 }
 
 .stat-row {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--uav-border) !important;
+  box-shadow: none !important;
+  border-radius: var(--uav-radius);
+  background: var(--uav-panel);
+  transition: all 0.4s ease;
 }
 
 .stat-card:hover {
+  border-color: var(--uav-primary) !important;
+  box-shadow: var(--uav-glow) !important;
   transform: translateY(-2px);
-  transition: all 0.3s;
 }
 
 .stat-content {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+  padding: 4px 0;
 }
 
 .stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--uav-border);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--uav-text);
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.4s ease;
+}
+
+.stat-icon--fleet { color: var(--uav-cyan); border-color: rgba(94, 139, 149, 0.3); }
+.stat-icon--online { color: var(--uav-lime); border-color: rgba(107, 142, 107, 0.3); }
+.stat-icon--ops { color: var(--uav-amber); border-color: rgba(184, 134, 69, 0.3); }
+.stat-icon--alerts { color: var(--uav-red); border-color: rgba(166, 68, 82, 0.3); }
+
+.stat-card:hover .stat-icon {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 16px currentColor;
 }
 
 .stat-info {
@@ -507,61 +548,69 @@ onUnmounted(() => {
 }
 
 .stat-value {
-  font-size: 26px;
-  font-weight: bold;
-  color: #303133;
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--uav-text);
+  font-family: 'Manrope', sans-serif;
+  line-height: 1;
 }
 
 .stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-top: 4px;
+  font-size: 11px;
+  color: var(--uav-muted);
+  margin-top: 8px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .main-row {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .map-card, .chart-card {
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 20px;
-}
-
-.map-card .card-header,
-.chart-card .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  color: #303133;
-}
-
-.map-container {
-  height: 360px;
-  width: 100%;
-}
-
-.chart-container {
-  height: 200px;
-  width: 100%;
-}
-
-.alert-chart {
-  height: 200px;
-  width: 100%;
-}
-
-.bottom-row .el-card {
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--uav-border) !important;
+  box-shadow: none !important;
+  border-radius: var(--uav-radius);
+  margin-bottom: 24px;
 }
 
 .card-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--uav-text);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.card-header span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.map-container {
+  height: 380px;
+  width: 100%;
+}
+
+.chart-container {
+  height: 220px;
+  width: 100%;
+}
+
+.alert-chart {
+  height: 220px;
+  width: 100%;
+}
+
+.bottom-row .el-card {
+  border: 1px solid var(--uav-border) !important;
+  box-shadow: none !important;
+  border-radius: var(--uav-radius);
 }
 </style>
